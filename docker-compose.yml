@@ -1,0 +1,13 @@
+services:
+  pta-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pta-server
+    env_file:
+      - .env
+    ports:
+      - "${PTA_PORT:-11550}:${PTA_PORT:-11550}"
+    volumes:
+      - ./pta-server:/app
+    restart: unless-stopped
