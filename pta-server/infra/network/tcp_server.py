@@ -75,7 +75,10 @@ class TcpServer:
             logger.info("Conexão encerrada com %s:%d", *client_addr)
 
     def _handle_client(self, client_sock: socket.socket):
-        """Gerencia o ciclo de vida do cliente conectado com limite de buffer de mensagem."""
+        """
+        Gerencia o ciclo de vida do cliente conectado com limite de buffer de mensagem
+        e suporte ao processamento de quebras de linha (\n ou \r\n).
+        """
         app_service = ProtocolApplicationService(
             allowed_users=self.allowed_users,
             storage=self.storage
@@ -87,21 +90,34 @@ class TcpServer:
             if not data:
                 break
 
-            # Proteção contra ataque de exaustão de memória (Buffer Flood / OOM)
             if len(buffer) + len(data) > self.max_message_size:
-                logger.warning("Mensagem de cliente excedeu o limite máximo de %d bytes. Rejeitando.", self.max_message_size)
-                client_sock.sendall(b"-1 NOK")
+                logger.warning("Mensagem de cliente excedeu limite de %d bytes.", self.max_message_size)
+                client_sock.sendall(b"0 NOK")
                 break
 
             buffer += data.decode(self.encoding, errors="replace")
-            message = buffer.strip()
-            buffer = ""
 
-            if not message:
-                continue
+            # Se houver quebras de linha (\n ou \r\n), processa cada mensagem em ordem
+            if "\n" in buffer:
+                lines = buffer.split("\n")
+                # A última parte pode ser incompleta
+                buffer = lines[-1]
+                messages_to_process = [line.strip("\r").strip() for line in lines[:-1] if line.strip("\r").strip()]
+            else:
+                messages_to_process = [buffer.strip()]
+                buffer = ""
 
-            response_bytes, should_close = app_service.process_raw_input(message)
-            client_sock.sendall(response_bytes)
+            should_terminate = False
+            for message in messages_to_process:
+                if not message:
+                    continue
 
-            if should_close:
+                response_bytes, should_close = app_service.process_raw_input(message)
+                client_sock.sendall(response_bytes)
+
+                if should_close:
+                    should_terminate = True
+                    break
+
+            if should_terminate:
                 break

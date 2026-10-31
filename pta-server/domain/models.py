@@ -19,8 +19,9 @@ class CommandType(Enum):
 
     @classmethod
     def from_string(cls, value: str) -> "CommandType":
+        # Case-sensitive estrito: comandos em minúsculas (ex: 'list') são UNKNOWN
         try:
-            return cls[value.upper()]
+            return cls[value]
         except KeyError:
             return cls.UNKNOWN
 
@@ -41,4 +42,3 @@ class ResponseMessage:
     seq_num: str
     payload: bytes
     should_close_connection: bool
-

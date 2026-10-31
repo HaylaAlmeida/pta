@@ -57,7 +57,21 @@ A arquitetura dissocia completamente o protocolo de comunicação (regras de tra
 
 ---
 
-## 2. Pilares de Computação em Nuvem (Cloud Native)
+## 2. Decisões de Interpretação da Especificação
+
+Como o documento `pta.pdf` deixa certos detalhes em aberto para decisão de projeto, foram adotadas as seguintes diretrizes estritas:
+
+- **Formato Estrito:** Um pedido válido possui a sintaxe `<dígitos> <COMANDO>` ou `<dígitos> <COMANDO> <argumento>`, separados por exatamente um espaço ASCII. `CUMP` e `PEGA` exigem argumento; `LIST` e `TERM` não podem possuir argumento. Comandos em minúsculas (como `list`) são tratados como comandos desconhecidos e recebem `NOK`.
+- **Validação de Argumentos no PEGA:** Pedidos com múltiplos argumentos (ex.: `PEGA a b`) fogem ao formato da especificação (um único arquivo por vez) e são rejeitados com `NOK`.
+- **Preservação de SEQ_NUM em Mensagens Inválidas:** Se o primeiro campo for numérico, ele é preservado na resposta. Caso a mensagem seja malformada ou o primeiro campo não seja dígito (ex.: `abc`), a resposta adota sequencial `0` (`0 NOK`).
+- **Tratamento de Quebras de Linha e Delimitadores:** Embora o cliente de referência não envie terminador explícito, caso o payload contenha `\n` ou `\r\n`, o stream é fatiado e cada linha é processada como uma mensagem ordenada e atômica.
+- **Hot-Reload de Usuários e Case-Sensitivity:** A autenticação diferencia maiúsculas de minúsculas (`user1` != `USER1`), e a lista `users.txt` é lida dinamicamente a cada `CUMP`, permitindo adicionar ou remover usuários sem necessidade de reiniciar o servidor.
+- **Segurança contra Directory Traversal:** O nome do arquivo no `PEGA` é resolvido de forma absoluta e só é aceito se for estritamente descendente de `files/`. Isso bloqueia tentativas como `../users.txt`, caminhos absolutos (`/etc/passwd`) e pastas superiores.
+- **Transferência Binária Íntegra:** O servidor envia o cabeçalho `<SEQ> ARQ <tamanho> ` seguido do payload binário sem alterações, garantindo integridade de arquivos de texto, executáveis, imagens PNG ou arquivos vazios (0 bytes com espaço final preservado).
+
+---
+
+## 3. Pilares de Computação em Nuvem (Cloud Native)
 
 Como o projeto se insere no contexto de Computação em Nuvem, foram implementadas salvaguardas e padrões recomendados para cargas de trabalho de rede resilientes:
 

@@ -231,9 +231,9 @@ class PTAServerComprehensiveTests(unittest.TestCase):
         self.assertEqual(resp_term, "998824 OK")
 
     def test_19_malformed_command_string(self):
-        """Mensagem sem espaço ou malformada retorna NOK."""
+        """Mensagem sem espaço ou malformada retorna 0 NOK."""
         resp = self.send_raw("MENSAGEM_SEM_NENHUM_ESPACO")
-        self.assertEqual(resp, "-1 NOK")
+        self.assertEqual(resp, "0 NOK")
 
 
 if __name__ == "__main__":

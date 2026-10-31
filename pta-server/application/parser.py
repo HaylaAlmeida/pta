@@ -9,23 +9,25 @@ class MessageParser:
         parts = raw_text.strip().split(" ", 2)
         if len(parts) < 2:
             return RequestMessage(
-                seq_num="-1",
+                seq_num="0",
                 command=CommandType.UNKNOWN,
                 raw_command="",
                 args="",
                 is_valid_format=False
             )
 
-        seq_num = parts[0]
+        raw_seq = parts[0]
         raw_command = parts[1]
         args = parts[2] if len(parts) == 3 else ""
-        is_valid = seq_num.isdigit()
+
+        # Se SEQ_NUM for numérico, mantém; caso contrário, adota "0"
+        is_seq_valid = raw_seq.isdigit()
+        seq_num = raw_seq if is_seq_valid else "0"
 
         return RequestMessage(
             seq_num=seq_num,
             command=CommandType.from_string(raw_command),
             raw_command=raw_command,
             args=args,
-            is_valid_format=is_valid
+            is_valid_format=is_seq_valid
         )
-

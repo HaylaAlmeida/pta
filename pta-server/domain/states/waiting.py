@@ -23,7 +23,10 @@ class WaitingState(ProtocolState):
             )
 
         username = request.args.strip()
-        if not username or " " in username or username not in context.allowed_users:
+        # Relê a lista de usuários no momento da autenticação (hot-reload dinâmico)
+        allowed_users = context.storage.get_allowed_users()
+
+        if not username or " " in username or username not in allowed_users:
             logger.warning("Usuário inválido ou não autorizado em WAITING: '%s'", username)
             return ResponseMessage(
                 seq_num=request.seq_num,
